@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: Buildconfig-${TEMPLATE_APP}-template
+  annotations:
+    description: "Buildconfig template for ${TEMPLATE_APP} application"
+    iconClass: ""
+    tags: "webmethods-msr"
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: ${TEMPLATE_APP} 
+    name: ${TEMPLATE_OCP_APP}
+    namespace: ${TEMPLATE_NAMESPACE}
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: '${TEMPLATE_APP}:${TEMPLATE_VERSION}'
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      binary: {}
+      type: Binary
+    strategy:
+      dockerStrategy:
+        env:
+          - name: APP_NAME
+            value: ${TEMPLATE_APP} 
+          - name: APP_VERSION
+            value: ${TEMPLATE_VERSION}
+          - name: ENVIRONMENT
+            value: ${TEMPLATE_OCP_APP} 
+        from:
+          kind: DockerImage
+          name: '${TEMPLATE_REGISTRY}/${TEMPLATE_BASE_APP}:${TEMPLATE_BASE_VERSION}'
+        pullSecret:
+          name: ${TEMPLATE_IMG_PULL_SECRET} 
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+parameters:
+  - name: TEMPLATE_APP
+  - name: TEMPLATE_BASE_APP
+  - name: TEMPLATE_OCP_APP 
+  - name: TEMPLATE_NAMESPACE
+  - name: TEMPLATE_REGISTRY
+  - name: TEMPLATE_IMG_PATH
+  - name: TEMPLATE_VERSION
+  - name: TEMPLATE_BASE_VERSION
+  - name: TEMPLATE_IMG_PULL_SECRET

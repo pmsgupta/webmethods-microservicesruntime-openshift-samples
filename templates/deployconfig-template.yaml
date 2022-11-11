@@ -1,0 +1,143 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: Deployconfig-${TEMPLATE_APP}-template
+  annotations:
+    description: "Deployconfig template for ${TEMPLATE_APP} application"
+    iconClass: ""
+    tags: ${TEMPLATE_APP_TAGS}
+objects:
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      labels:
+        app: ${TEMPLATE_APP} 
+      name: ${TEMPLATE_OCP_APP} 
+      namespace: ${TEMPLATE_NAMESPACE} 
+    spec:
+      replicas: ${{TEMPLATE_REPLICAS}}
+      triggers: []
+      selector:
+        app: ${TEMPLATE_APP} 
+        deploymentconfig: ${TEMPLATE_OCP_APP} 
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: ${TEMPLATE_APP} 
+            deploymentconfig: ${TEMPLATE_OCP_APP}
+        spec:
+          containers:
+            - envFrom:
+              - configMapRef:
+                  name: ${TEMPLATE_OCP_APP}
+              - secretRef: 
+                  name: ${TEMPLATE_OCP_APP}
+              volumeMounts:
+                - name: ${TEMPLATE_OCP_APP} 
+                  mountPath: ${TEMPLATE_SSL_KEYSTORE_SECRETS_PATH} 
+                  readOnly: true
+              image: '${TEMPLATE_INTERNAL_REGISTRY}/${TEMPLATE_IMG_PATH}/${TEMPLATE_APP}:${TEMPLATE_APP_VERSION}'
+              imagePullPolicy: Always
+              name: ${TEMPLATE_OCP_APP}
+              ports:
+                - containerPort: ${{TEMPLATE_PORT}}
+                  protocol: TCP
+              resources: 
+                  limits:
+                    cpu: ${TEMPLATE_LIMIT_CPU}
+                    memory: ${TEMPLATE_LIMIT_MEMORY}
+                  requests:
+                    cpu: ${TEMPLATE_REQUEST_CPU}
+                    memory: ${TEMPLATE_REQUEST_MEMORY}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          volumes:
+          - configMap:
+              defaultMode: 420
+              name: ${TEMPLATE_OCP_APP}
+              items:
+                - key: GET_ACCOUNT_BALANCE_SSL_IDENTITY_STORE_JKS_FILE
+                  path: identity_store.jks
+                - key: GET_ACCOUNT_BALANCE_SSL_TRUST_STORE_JKS_FILE
+                  path: trust_store.jks
+            name: ${TEMPLATE_OCP_APP}
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+  - kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: ${TEMPLATE_OCP_APP}
+      namespace: ${TEMPLATE_NAMESPACE}
+    data:
+        myvalue: MicroServiceRuntime
+        installdir: "/opt/softwareag"
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      labels:
+        app: ${TEMPLATE_OCP_APP}
+      name: ${TEMPLATE_OCP_APP} 
+      namespace: ${TEMPLATE_NAMESPACE}
+    spec:
+      ports:
+        - name: ${TEMPLATE_PORT}-tcp
+          port: ${{TEMPLATE_PORT}}
+          protocol: TCP
+          targetPort: ${{TEMPLATE_TARGET_PORT}}
+      selector:
+        deploymentconfig: ${TEMPLATE_OCP_APP} 
+      sessionAffinity: None
+      type: ClusterIP
+    status:
+      loadBalancer: {}
+  - kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      annotations:
+        haproxy.router.openshift.io/balance: roundrobin
+      labels:
+        app: ${TEMPLATE_APP} 
+      name: ${TEMPLATE_OCP_APP} 
+      namespace: ${TEMPLATE_NAMESPACE} 
+    spec:
+      host: ${TEMPLATE_ROUTE_HOST}
+      port:
+        targetPort: ${TEMPLATE_PORT}-tcp
+      to:
+        kind: Service
+        name: ${TEMPLATE_OCP_APP}
+        weight: 100
+      wildcardPolicy: None
+parameters:
+  - name: TEMPLATE_APP 
+  - name: TEMPLATE_APP_TAGS 
+  - name: TEMPLATE_OCP_APP 
+  - name: TEMPLATE_NAMESPACE
+  - name: TEMPLATE_INTERNAL_REGISTRY
+  - name: TEMPLATE_IMG_PATH
+  - name: TEMPLATE_APP_VERSION
+  - name: TEMPLATE_REPLICAS
+  - name: TEMPLATE_PORT
+  - name: TEMPLATE_TARGET_PORT
+  - name: TEMPLATE_ROUTE_HOST
+  - name: TEMPLATE_CA_CERTIFICATE
+  - name: TEMPLATE_EXT_REGISTRY
+  - name: TEMPLATE_EXT_REGISTRY_IMG_PATH
+  - name: TEMPLATE_SSL_KEYSTORE_SECRETS_PATH
+  - name: TEMPLATE_REQUEST_CPU
+  - name: TEMPLATE_REQUEST_MEMORY
+  - name: TEMPLATE_LIMIT_CPU
+  - name: TEMPLATE_LIMIT_MEMORY

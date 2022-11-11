@@ -1,0 +1,11 @@
+TEMPLATE_APP=data-store-manager-configuration-api-v1-0
+TEMPLATE_OCP_APP=data-store-manager-configuration-api-v1-0
+TEMPLATE_NAMESPACE=isintegration-notificationhub-dev
+TEMPLATE_IMG_PULL_SECRET=artifactory.uscc.com
+TEMPLATE_REGISTRY=is-docker-dev.artifactory.uscc.com
+TEMPLATE_IMG_PATH=service-integration
+TEMPLATE_VERSION=1.0.0
+TEMPLATE_BASE_APP="fuse-java-openshift-jdk11-rhel8"
+TEMPLATE_BASE_IMG_PATH="fuse7"
+TEMPLATE_BASE_VERSION="1.10"
+TEMPLATE_OCP_ENV=DeployToOCP4-PTE-SPRING-BOOT-JDK11
